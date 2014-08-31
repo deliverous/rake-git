@@ -6,11 +6,16 @@ def git_update(repository, options = {}, &body)
     fail "repository required" if repository.nil?
     path = options[:path] || repository.pathmap("%f")
 
-    desc "Update #{repository} into #{path}"
     name = (Git::Groups + [path]).join(':')
+    desc "Update #{repository} into #{path}"
     task "update:#{name}" do
         status = Git::update repository, path: path
         body.call(status) unless body.nil?
+    end
+    desc "Status of #{path}"
+    task "status:#{name}" do
+        puts "== #{name}".green
+        Dir.chdir(path) {system("git", "status")}
     end
     Git::TaskByGroup[-1] << name
 end
@@ -25,8 +30,12 @@ def git_group(group)
         desc "Update group #{name}"
         task "update:#{name}"
 
+        desc "Status for group #{name}"
+        task "status:#{name}"
+
         Git::TaskByGroup[-1].each do |t|
             task "update:#{name}" => t
+            task "status:#{name}" => t
         end
     ensure
         Git::Groups.pop
