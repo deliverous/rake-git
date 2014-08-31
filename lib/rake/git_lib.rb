@@ -1,18 +1,44 @@
 require 'rake/tasklib'
+require 'colorize'
 
 
-def git_update(repository, path=nil, &body)
+def git_update(repository, options = {}, &body)
     fail "repository required" if repository.nil?
-    path = repository.pathmap("%f") if path.nil?
-    desc "Update #{repository}"
-    task "git:update:#{path}" do
+    path = options[:path] || repository.pathmap("%f")
+
+    desc "Update #{repository} into #{path}"
+    name = (Git::Groups + [path]).join(':')
+    task "update:#{name}" do
         status = Git::update repository, path: path
         body.call(status) unless body.nil?
+    end
+    Git::TaskByGroup[-1] << name
+end
+
+def git_group(group)
+    Git::Groups.push group
+    Git::TaskByGroup.push []
+    name = Git::Groups.join(':')
+    begin
+        yield if block_given?
+
+        desc "Update group #{name}"
+        task "update:#{name}"
+
+        Git::TaskByGroup[-1].each do |t|
+            task "update:#{name}" => t
+        end
+    ensure
+        Git::Groups.pop
+        Git::TaskByGroup.pop
     end
 end
 
 
 module Git
+    Groups = []
+    TaskByGroup = []
+
     def self.status path
         Dir.chdir(path) do
             system "git", "fetch"
