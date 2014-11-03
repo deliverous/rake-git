@@ -13,6 +13,7 @@ def git_update(repository, options = {}, &body)
         status = Git::update repository, path: path
         body.call(status) unless body.nil?
         if not tag.nil? then
+            puts "-- switching on #{tag}"
             system "git", "checkout", tag
         end        
     end
