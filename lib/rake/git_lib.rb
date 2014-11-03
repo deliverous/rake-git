@@ -13,8 +13,9 @@ def git_update(repository, options = {}, &body)
         status = Git::update repository, path: path
         body.call(status) unless body.nil?
         if not tag.nil? then
-            puts "-- switching on #{tag}"
-            system "git", "checkout", tag
+            Dir.chdir(path) { system "git", "checkout", tag }
+        else
+            Dir.chdir(path) { system "git", "checkout", "master" }
         end        
     end
     desc "Status of #{path}"
