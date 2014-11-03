@@ -5,12 +5,16 @@ require 'colorize'
 def git_update(repository, options = {}, &body)
     fail "repository required" if repository.nil?
     path = options[:path] || repository.pathmap("%f")
+    tag = options[:tag]
 
     name = (Git::Groups + [path]).join(':')
     desc "Update #{repository} into #{path}"
     task "update:#{name}" do
         status = Git::update repository, path: path
         body.call(status) unless body.nil?
+        if not tag.nil? then
+            system "git", "checkout", tag
+        end        
     end
     desc "Status of #{path}"
     task "status:#{name}" do
