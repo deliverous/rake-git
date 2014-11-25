@@ -19,7 +19,7 @@ def git_update(repository, options = {}, &body)
         puts "== #{name}".green
         Dir.chdir(path) {system("git", "status")}
     end
-    Git::TaskByGroup[-1] << name
+    Git::TaskByGroup[-1] << name if Git::TaskByGroup
 end
 
 def git_group(group)
@@ -90,5 +90,15 @@ module Git
             system "git", "clone", url, path
             return :cloned
         end
-    end    
+    end
+
+    def self.updateto(url, options = {})
+        update(url, options)
+        path = options[:path] || File.basename(url)
+        tag = options[:tag] || "master"
+        Dir.chdir(path) {
+            puts `pwd`
+            system "git", "checkout", tag
+        }
+    end
 end
